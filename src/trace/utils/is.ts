@@ -16,3 +16,7 @@ export function isConstructable(target: any) {
 
   return true;
 }
+
+export function isDisabledUrl(url: string) {
+  return false;
+}

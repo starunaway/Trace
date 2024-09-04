@@ -30,5 +30,12 @@ export function registerEvent<E extends Event = Event>({
   if (!validate) {
     return;
   }
-  target.addEventListener(eventName, handler as EventListener, capture);
+  target.addEventListener(eventName, processEvent(handler) as EventListener, capture);
+}
+
+function processEvent(handler) {
+  return function (e) {
+    console.log('!1111111', e);
+    handler(e);
+  };
 }

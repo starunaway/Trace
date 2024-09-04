@@ -51,6 +51,16 @@ function App() {
       <button
         onClick={() => {
           // add script
+          const script = document.createElement('script');
+          script.src = 'http://localhost:3002/sd.js';
+          document.body.appendChild(script);
+        }}
+      >
+        add script cors
+      </button>
+      <button
+        onClick={() => {
+          // add script
           const img = document.createElement('img');
           img.src = 'https://cdn.jsdel222ivr.net/npm/axios/dist/axios.min.js';
           document.body.appendChild(img);
@@ -129,6 +139,44 @@ function App() {
         }}
       >
         axios post
+      </button>
+      <button
+        onClick={() => {
+          const controller = new AbortController();
+          setTimeout(() => controller.abort('timeout'), 100);
+
+          fetch('http://localhost:3001/api/timeout', {
+            method: 'post',
+            body: new FormData(),
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            signal: controller.signal,
+          });
+        }}
+      >
+        fetch post
+      </button>
+      <button
+        onClick={() => {
+          fetch('https://ddd.typicode.com/todos/1');
+        }}
+      >
+        fetch error url
+      </button>
+      <button
+        onClick={() => {
+          fetch('http://localhost:3001/api/404');
+        }}
+      >
+        fetch 404
+      </button>
+      <button
+        onClick={() => {
+          fetch('http://localhost:3001/api/200');
+        }}
+      >
+        fetch 200
       </button>
     </div>
   );

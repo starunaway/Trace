@@ -12,6 +12,7 @@ export default function wrapInstance<T = any>({
   handler,
 }: WrapInstanceParams<T>) {
   const source = target[instance];
+
   if (!isConstructable(source)) {
     return;
   }

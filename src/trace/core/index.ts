@@ -12,9 +12,10 @@ import {
   handleXHRLoadEnd,
   handleXHRTimeout,
 } from './events/handler';
-import { TraceXMLHttpRequest } from '../types/Http';
-import wrapInstance from './events/wrapInstance';
+import { TraceHTTPParams, TraceXMLHttpRequest } from '../types/Http';
+import { wrapHoc } from '../utils/instrument/wrapHoc';
 import { getTimestamp, toString } from '../utils/common';
+import wrapInstance from '../utils/instrument/wrapInstance';
 
 class Tracer extends EventEmitter<TraceEventHandler> {
   constructor(options: TracerOptions) {
@@ -97,46 +98,36 @@ class Tracer extends EventEmitter<TraceEventHandler> {
       },
     });
 
-    // const xhrProto = XMLHttpRequest.prototype;
-    // const send = xhrProto.send;
+    wrapHoc<typeof fetch>({
+      target: _global,
+      property: 'fetch',
+      replace: (source) => {
+        return function (this: Tracer, ...args: Parameters<typeof fetch>) {
+          const [input, init] = args;
+          const startTime = getTimestamp();
+          const method = (init?.method as string)?.toUpperCase() || 'GET';
+          const url =
+            typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
 
-    // const xhr = new XMLHttpRequest();
-    // xhr.onerror = function (e) {};
-    // xhr.onabort = function (e) {};
+          const traceParams: TraceHTTPParams = {
+            method,
+            url,
+            timeStamp: startTime,
+          };
 
-    // xhr.ontimeout = function (e) {};
-    // const open = xhrProto.open;
-    // xhrProto.open = function () {
-    //   console.log('xhrProto,open', arguments);
-
-    //   const [method, url] = arguments;
-    //   this.trackParams = {
-    //     method: (method as string).toUpperCase(),
-    //     url,
-    //   };
-    //   open.apply(this, arguments);
-    // };
-    // xhrProto.send = function () {
-    //   console.log('xhrProto,send', arguments);
-
-    //   this.addEventListener('error', (e) => {
-    //     const { responseType, response, status, trackParams } = this;
-    //     console.log('xhrProto,error', e, responseType, response, status, trackParams);
-    //   });
-
-    //   this.addEventListener('abort', (e) => {
-    //     console.log('xhrProto,abort', e, this);
-    //   });
-    //   this.addEventListener('loadend', (e) => {
-    //     const { responseType, response, status, trackParams } = this;
-    //     console.log('xhrProto,loadend', responseType, response, status, trackParams);
-    //   });
-    //   this.addEventListener('timeout', (e) => {
-    //     console.log('xhrProto,timeout', e, this);
-    //   });
-
-    //   send.apply(this, arguments);
-    // };
+          return source
+            .apply(_global, args)
+            .then((res) => {
+              console.log(this);
+              return res;
+            })
+            .catch((err) => {
+              console.log('111', err, this);
+              return Promise.reject(err);
+            });
+        }.bind(this);
+      },
+    });
   }
 }
 

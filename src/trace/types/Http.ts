@@ -5,13 +5,15 @@ export const enum XHR_STATUS {
   LoadEnd = 'loadend',
 }
 
+export interface TraceHTTPParams {
+  method: string;
+  url: string;
+  timeStamp?: number;
+  requestData?: any;
+  xhrStatus?: XHR_STATUS;
+  httpStatus?: number;
+}
+
 export interface TraceXMLHttpRequest extends XMLHttpRequest {
-  traceParams: {
-    method: string;
-    url: string;
-    timeStamp?: number;
-    requestData?: any;
-    xhrStatus?: XHR_STATUS;
-    httpStatus?: number;
-  };
+  traceParams: TraceHTTPParams;
 }
