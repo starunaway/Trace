@@ -1,12 +1,15 @@
-import { NativeEventType, NativeXHREventType, TraceEventHandler } from '../types/Event';
+import {
+  NativeEventType,
+  NativeXHREventType,
+  ProcessEventType,
+  TraceEventHandler,
+} from '../types/Event';
 import { TracerOptions } from '../types/TracerOptions';
 import { _global } from '../utils/global';
 import EventEmitter from 'eventemitter3';
 import { registerEvent } from '../utils/registerEvent';
 import {
-  handleNewImageError,
   handleUnhandledRejection,
-  handleWindowError,
   handleXHRAbort,
   handleXHRError,
   handleXHRLoadEnd,
@@ -16,36 +19,25 @@ import { TraceXMLHttpRequest, XHR_TRACER_DATA_KEY } from '../types/Http';
 import { wrapHoc } from '../utils/instrument/wrapHoc';
 import { getTimestamp, toString } from '../utils/common';
 import wrapInstance from '../utils/instrument/wrapInstance';
+import { registerResourceIntegrations } from './integrations/resource';
+import { EventHandler } from '../utils/instrument/eventHandlers';
+import { registerGlobalErrorIntegrations } from './integrations/error';
 
 class Tracer extends EventEmitter<TraceEventHandler> {
   constructor(options: TracerOptions) {
     super();
     this.register();
+    this.handleEvent();
   }
 
   private register() {
-    registerEvent({
-      target: _global,
-      eventName: NativeEventType.Error,
-      handler: handleWindowError.bind(this),
-      capture: true,
-    });
+    registerResourceIntegrations();
+    registerGlobalErrorIntegrations();
 
     registerEvent({
       target: _global,
       eventName: NativeEventType.UnhandledRejection,
       handler: handleUnhandledRejection.bind(this),
-    });
-
-    wrapInstance<HTMLImageElement>({
-      target: _global,
-      instance: 'Image',
-      handler: (target) =>
-        registerEvent({
-          target,
-          eventName: NativeEventType.Error,
-          handler: handleNewImageError.bind(this),
-        }),
     });
 
     wrapInstance<XMLHttpRequest>({
@@ -58,7 +50,6 @@ class Tracer extends EventEmitter<TraceEventHandler> {
           (this as TraceXMLHttpRequest)[XHR_TRACER_DATA_KEY] = {
             method: (method as string).toUpperCase(),
             url,
-            request_headers: {},
           };
           sourceOpen.apply(this, arguments as any);
         };
@@ -132,6 +123,16 @@ class Tracer extends EventEmitter<TraceEventHandler> {
 
   processEvent(xxx, data) {
     this.emit(xxx, data);
+  }
+
+  private handleEvent() {
+    EventHandler.on(ProcessEventType.Resource, (data) => {
+      console.log('resource error', data);
+    });
+
+    EventHandler.on(ProcessEventType.Error, (data) => {
+      console.log(' error', data);
+    });
   }
 }
 

@@ -1,3 +1,5 @@
+import ErrorStackParser from 'error-stack-parser';
+
 /**
  * 浏览器事件类型
  */
@@ -6,6 +8,16 @@ export const enum NativeEventType {
   UnhandledRejection = 'unhandledrejection',
   Fetch = 'fetch',
   Performance = 'performance',
+}
+
+/**
+ * 自定义事件数据
+ */
+export interface BaseTraceEvent {
+  event_id?: string;
+  message?: string;
+  timestamp?: number;
+  startTimestamp?: number;
 }
 
 /**
@@ -19,13 +31,32 @@ export const enum NativeXHREventType {
   ReadyStateChange = 'readystatechange',
 }
 
+export const enum ProcessEventType {
+  Resource = 'resource',
+  XHR = 'xhr',
+  Fetch = 'fetch',
+  Error = 'error',
+}
+
 /**
- * todo 这里应该上报处理后事件数据，而非原始事件
+ * 处理原生事件
  */
-export type TraceEventHandler = {
-  [TraceEventType.Error]: (error: Error) => void;
-  [TraceEventType.HTTP]: (xhr: XMLHttpRequest) => void;
-  [TraceEventType.Performance]: (performance: Performance) => void;
+export type ProcessEventHandler = {
+  [ProcessEventType.Resource]: (data: {
+    url: string;
+    nodeName: string;
+    /**
+     * 浏览器标签 或者 new Image 形式
+     */
+    type: 'dom' | 'new';
+  }) => void;
+  [ProcessEventType.Error]: (error: {
+    message: string;
+    stackFrame: ErrorStackParser.StackFrame;
+    event: ErrorEvent;
+  }) => void;
+  [ProcessEventType.XHR]: (xhr: XMLHttpRequest) => void;
+  [ProcessEventType.Fetch]: (performance: Performance) => void;
 };
 
 /**
@@ -37,8 +68,11 @@ export const enum TraceEventType {
   HTTP = 'http',
   Performance = 'performance',
 }
-
 /**
- * 自定义事件数据
+ * 聚合事件，用于上报 or 本地缓存
  */
-export interface BaseTraceEvent {}
+export type TraceEventHandler = {
+  [TraceEventType.Error]: (error: Error) => void;
+  [TraceEventType.HTTP]: (xhr: XMLHttpRequest) => void;
+  [TraceEventType.Performance]: (performance: Performance) => void;
+};
