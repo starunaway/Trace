@@ -1,5 +1,5 @@
 import Tracer from '../core';
-import { TraceEvent } from '../types/Event';
+import { TraceEventType } from '../types/Event';
 import { ReportOptions } from '../types/ReportOptions';
 
 class TraceReport {
@@ -12,7 +12,7 @@ class TraceReport {
   }
 
   private start() {
-    this.tracer.on(TraceEvent.Error, (data) => {
+    this.tracer.on(TraceEventType.Error, (data) => {
       console.log(data);
     });
   }

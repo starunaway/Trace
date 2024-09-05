@@ -1,33 +1,44 @@
 /**
- * 浏览器事件
+ * 浏览器事件类型
  */
-export const enum NativeEvent {
+export const enum NativeEventType {
   Error = 'error',
   UnhandledRejection = 'unhandledrejection',
   Fetch = 'fetch',
   Performance = 'performance',
 }
 
-export const enum NativeXHREvent {
+/**
+ * XMLHttpRequest 事件类型
+ */
+export const enum NativeXHREventType {
   Error = 'error',
   Abort = 'abort',
   Timeout = 'timeout',
   LoadEnd = 'loadend',
+  ReadyStateChange = 'readystatechange',
 }
 
+/**
+ * todo 这里应该上报处理后事件数据，而非原始事件
+ */
 export type TraceEventHandler = {
-  [TraceEvent.Error]: (error: Error) => void;
-  [TraceEvent.HTTP]: (xhr: XMLHttpRequest) => void;
-  [TraceEvent.Performance]: (performance: Performance) => void;
+  [TraceEventType.Error]: (error: Error) => void;
+  [TraceEventType.HTTP]: (xhr: XMLHttpRequest) => void;
+  [TraceEventType.Performance]: (performance: Performance) => void;
 };
 
 /**
  * 自定义事件
  *
- * 用于上报
  */
-export const enum TraceEvent {
+export const enum TraceEventType {
   Error = 'error',
   HTTP = 'http',
   Performance = 'performance',
 }
+
+/**
+ * 自定义事件数据
+ */
+export interface BaseTraceEvent {}

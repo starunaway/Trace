@@ -1,7 +1,6 @@
 import ErrorStackParser from 'error-stack-parser';
 import Tracer from '..';
-import { TraceXMLHttpRequest, XHR_STATUS } from '../../types/Http';
-import { getTimestamp } from '../../utils/common';
+import { TraceXMLHttpRequest, XHR_TRACER_DATA_KEY } from '../../types/Http';
 import { isDisabledUrl } from '../../utils/is';
 
 export function handleWindowError(this: Tracer, event: ErrorEvent) {
@@ -12,7 +11,7 @@ export function handleWindowError(this: Tracer, event: ErrorEvent) {
     const src = target.src || target.href;
     // window.location.href.indexOf(src) !== 0的原因是当img标签为空时候，也会监听报错，所以排除掉。
     if (window.location.href.indexOf(src) !== 0) {
-      this.emit('error', {
+      this.processEvent('error', {
         type: 'resource',
         url: src,
         nodeName: target.nodeName.toLowerCase(),
@@ -26,7 +25,7 @@ export function handleWindowError(this: Tracer, event: ErrorEvent) {
   const stackFrame = ErrorStackParser.parse(!target ? event : error)[0];
   const { fileName, columnNumber, lineNumber } = stackFrame;
 
-  this.emit('error', {
+  this.processEvent('error', {
     type: 'error',
     ...stackFrame,
     fileName: filename || fileName,
@@ -40,12 +39,12 @@ export function handleUnhandledRejection(this: Tracer, event: PromiseRejectionEv
   const { reason } = event;
   if (reason instanceof Error) {
     const stackFrame = ErrorStackParser.parse(event.reason);
-    this.emit('error', {
+    this.processEvent('error', {
       type: 'promiseError',
       ...stackFrame[0],
     });
   } else {
-    this.emit('error', {
+    this.processEvent('error', {
       type: 'promiseError',
       reason,
     });
@@ -56,7 +55,7 @@ export function handleNewImageError(this: Tracer, event: ErrorEvent) {
   const { target } = event;
   const src = (target as HTMLImageElement).src;
 
-  this.emit('error', {
+  this.processEvent('error', {
     type: 'resource',
     subTYpe: 'newImage',
     url: src,
@@ -65,63 +64,62 @@ export function handleNewImageError(this: Tracer, event: ErrorEvent) {
 }
 
 export function handleXHRError(this: Tracer, target: TraceXMLHttpRequest) {
-  target.traceParams.xhrStatus = XHR_STATUS.Error;
-  const { method, url, requestData, timeStamp } = target.traceParams;
+  target[XHR_TRACER_DATA_KEY].status_code = target.status;
+  const { method, url, body } = target[XHR_TRACER_DATA_KEY];
   if (isDisabledUrl(url)) {
     return;
   }
-  this.emit('error', {
+  this.processEvent('error', {
     type: 'error',
     method,
     url,
     subType: 'xhr',
-    requestData,
-    timeStamp,
+    body,
   });
 }
 
 export function handleXHRAbort(this: Tracer, target: TraceXMLHttpRequest) {
-  target.traceParams.xhrStatus = XHR_STATUS.Abort;
-  const { method, url, requestData, timeStamp } = target.traceParams;
+  target[XHR_TRACER_DATA_KEY].status_code = target.status;
+  const { method, url, body } = target[XHR_TRACER_DATA_KEY];
 
   if (isDisabledUrl(url)) {
     return;
   }
-  this.emit('error', {
+  this.processEvent('error', {
     type: 'abort',
     method,
     url,
     subType: 'xhr',
-    requestData,
-    timeStamp,
+    body,
   });
 }
 
 export function handleXHRTimeout(this: Tracer, target: TraceXMLHttpRequest, e: Event) {
-  target.traceParams.xhrStatus = XHR_STATUS.Timeout;
-
-  const { method, url, requestData, timeStamp } = target.traceParams;
+  target[XHR_TRACER_DATA_KEY].status_code = target.status;
+  const { method, url, body } = target[XHR_TRACER_DATA_KEY];
   if (isDisabledUrl(url)) {
     return;
   }
-  this.emit('error', {
+  this.processEvent('error', {
     type: 'timeout',
     method,
     url,
     subType: 'xhr',
-    requestData,
-    timeStamp,
+    body,
   });
 }
 
+export function handleXHRReadyStateChange(this: Tracer, target: TraceXMLHttpRequest, e: Event) {
+  console.log('handleXHRReadyStateChange', target, e);
+}
+
 export function handleXHRLoadEnd(this: Tracer, target: TraceXMLHttpRequest) {
-  const { method, url, xhrStatus, timeStamp } = target.traceParams;
+  const { method, url } = target[XHR_TRACER_DATA_KEY];
+
   if (isDisabledUrl(url)) {
     return;
   }
-  if (
-    [XHR_STATUS.Abort, XHR_STATUS.Timeout, XHR_STATUS.Error].indexOf(xhrStatus as XHR_STATUS) > -1
-  ) {
+  if (target[XHR_TRACER_DATA_KEY].status_code !== 4) {
     return;
   }
   const { responseType, response, status } = target;
@@ -138,7 +136,7 @@ export function handleXHRLoadEnd(this: Tracer, target: TraceXMLHttpRequest) {
 
   //   console.log('handleXHRLoadEnd', target, responseType, response, status, this);
   if (status >= 400) {
-    this.emit('error', {
+    this.processEvent('error', {
       type: 'statusError',
       method,
       url,
@@ -146,8 +144,6 @@ export function handleXHRLoadEnd(this: Tracer, target: TraceXMLHttpRequest) {
       responseData: response,
       responseType,
       status,
-      timeStamp,
-      elapsedTime: getTimestamp() - timeStamp!,
     });
   }
 }

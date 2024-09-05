@@ -1,3 +1,5 @@
+import { BaseTraceEvent } from '../types/Event';
+
 interface StackFrame {
   filename?: string;
   function?: string;
@@ -180,4 +182,36 @@ function _isSameFingerprint(currentEvent: any, previousEvent: any): boolean {
 
 function _getExceptionFromEvent(event: any): any | undefined {
   return event.exception && event.exception.values && event.exception.values[0];
+}
+
+let previousEvent: BaseTraceEvent | undefined;
+
+/**
+ * 判断相邻的两个事件是否重复
+ * @example
+ * ```
+ *  throw new Error('test');
+ *  会在 window.onerror 中监听到 继续冒泡会被 react 捕获继而丢出
+ * ```
+ * ```
+ *  axios("error url")
+ *  会在 xhr中捕获，同时被 unhandledRejection 捕获
+ * ```
+ * @param currentEvent
+ * @returns
+ */
+export function shouldDedupeEvent(currentEvent: BaseTraceEvent) {
+  if (!previousEvent) {
+    return false;
+  }
+
+  if (isSameMessageEvent(currentEvent, previousEvent)) {
+    return true;
+  }
+
+  if (isSameExceptionEvent(currentEvent, previousEvent)) {
+    return true;
+  }
+
+  return false;
 }

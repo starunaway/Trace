@@ -1,6 +1,7 @@
 import isElement from 'lodash-es/isElement';
 import isFunction from 'lodash-es/isFunction';
 import isUndefined from 'lodash-es/isUndefined';
+import { shouldDedupeEvent } from './dedupe';
 
 interface RegisterParams<E extends Event = Event> {
   target: HTMLElement | Document | Window | XMLHttpRequest;
@@ -33,9 +34,16 @@ export function registerEvent<E extends Event = Event>({
   target.addEventListener(eventName, processEvent(handler) as EventListener, capture);
 }
 
+/**
+ * todo 这里处理的是原生事件
+ * 在某些情况下，比如去重 or 更详细的堆栈信息，需要在更外层去处理
+ * @param handler 事件处理函数
+ * @returns
+ */
 function processEvent(handler) {
   return function (e) {
-    console.log('!1111111', e);
-    handler(e);
+    if (!shouldDedupeEvent(e)) {
+      handler(e);
+    }
   };
 }
