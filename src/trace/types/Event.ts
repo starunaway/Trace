@@ -1,4 +1,5 @@
 import ErrorStackParser from 'error-stack-parser';
+import { TraceFetchData, TraceXHRData } from './Http';
 
 /**
  * 浏览器事件类型
@@ -33,9 +34,10 @@ export const enum NativeXHREventType {
 
 export const enum ProcessEventType {
   Resource = 'resource',
+  Error = 'error',
+  UnhandledRejection = 'unhandledrejection',
   XHR = 'xhr',
   Fetch = 'fetch',
-  Error = 'error',
 }
 
 /**
@@ -50,13 +52,16 @@ export type ProcessEventHandler = {
      */
     type: 'dom' | 'new';
   }) => void;
-  [ProcessEventType.Error]: (error: {
+  [ProcessEventType.Error]: (data: {
     message: string;
     stackFrame: ErrorStackParser.StackFrame;
     event: ErrorEvent;
   }) => void;
-  [ProcessEventType.XHR]: (xhr: XMLHttpRequest) => void;
-  [ProcessEventType.Fetch]: (performance: Performance) => void;
+  [ProcessEventType.UnhandledRejection]: (data: {
+    reason: string | ErrorStackParser.StackFrame;
+  }) => void;
+  [ProcessEventType.XHR]: (data: TraceXHRData) => void;
+  [ProcessEventType.Fetch]: (data: TraceFetchData) => void;
 };
 
 /**

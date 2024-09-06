@@ -34,9 +34,9 @@ export function registerResourceIntegrations() {
   wrapInstance<HTMLImageElement>({
     target: _global,
     instance: 'Image',
-    handler: (target) =>
+    handler: (instance) =>
       registerEvent({
-        target,
+        target: instance,
         eventName: NativeEventType.Error,
         handler: (event) => {
           const { target } = event;
