@@ -22,7 +22,6 @@ import TraceReport from './trace/report/index.ts';
 //     performance: true, // 页面性能
 //   },
 // };
-debugger;
 // Trace.init(options);
 
 new TraceReport({

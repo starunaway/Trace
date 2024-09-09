@@ -1,12 +1,10 @@
-import { isError, isFunction } from 'lodash-es';
+import { isError } from 'lodash-es';
 import { TraceFetchData } from '../../types/Http';
 import { convertHeadersToObject, getTimestamp, shouldHTTPReport } from '../../utils/common';
 import { _global } from '../../utils/global';
 import { wrapHoc } from '../../utils/instrument/wrapHoc';
-import TraceOption from '../option';
 import { EventHandler } from '../../utils/instrument/eventHandlers';
 import { ProcessEventType } from '../../types/Event';
-import ErrorStackParser from 'error-stack-parser';
 
 export function registerFetch() {
   wrapHoc<typeof fetch>({

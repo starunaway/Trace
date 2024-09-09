@@ -36,7 +36,15 @@ function App() {
           console.log(d.d);
         }}
       >
-        d.d
+        ReferenceError
+      </button>
+      <button
+        onClick={() => {
+          const s: any = 'SDf';
+          console.log(s.forEach((d) => d));
+        }}
+      >
+        TypeError
       </button>
       <button
         onClick={() => {
@@ -47,6 +55,15 @@ function App() {
         }}
       >
         add script
+      </button>
+      <button
+        onClick={() => {
+          setTimeout(() => {
+            throw new Error('sdf');
+          });
+        }}
+      >
+        settimeout
       </button>
       <button
         onClick={() => {

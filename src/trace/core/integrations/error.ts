@@ -1,4 +1,3 @@
-import ErrorStackParser from 'error-stack-parser';
 import { NativeEventType, ProcessEventType } from '../../types/Event';
 import { _global } from '../../utils/global';
 import { EventHandler } from '../../utils/instrument/eventHandlers';
@@ -17,14 +16,7 @@ export function registerGlobalErrorIntegrations() {
         return;
       }
 
-      const { error, message } = event;
-      const stackFrame = ErrorStackParser.parse(!target ? event : error)[0];
-
-      EventHandler.emit(ProcessEventType.Error, {
-        message: message || error.message,
-        stackFrame,
-        event,
-      });
+      EventHandler.emit(ProcessEventType.Error, event);
     },
     capture: true,
   });
